@@ -1,0 +1,73 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install system packages used by the tests
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mpv ffmpeg
+      - run: npm ci
+      - run: npm run typecheck
+      # The mpv tests run with silent output (--ao=null), so no sound card is needed.
+      - run: npm test
+
+  package:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # rpm provides rpmbuild, which electron-builder needs for the .rpm target.
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends rpm
+      - run: npm ci
+      - name: Build app and Linux packages
+        run: npx electron-vite build && npx electron-builder --linux AppImage deb rpm --publish never
+      - name: List packages
+        run: ls -lh dist/*.AppImage dist/*.deb dist/*.rpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: myplayer-linux-packages
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: myplayer-linux-packages
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
