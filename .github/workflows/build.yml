@@ -16,7 +16,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    # 26.04 for its mpv 0.41: the player needs 0.38+ (loadfile's index argument), 24.04 ships 0.37.
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
