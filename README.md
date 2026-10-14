@@ -45,7 +45,9 @@ Notes:
 | Do this | Result |
 | --- | --- |
 | Type in Search and press Enter | Searches YouTube: titles, thumbnails, channels, durations |
-| Paste a YouTube link | Opens that single video (playlists and channels are rejected) |
+| Paste a video link | Opens that single video (a watch link that also has `&list=` opens just the video) |
+| Paste a playlist link | Loads up to 200 videos. Play all, add them to the queue, or save them as a playlist |
+| Paste a channel link, or click a channel name on any track (or ⋯ → Go to channel) | Opens the channel: a Videos tab with its latest uploads and a Playlists tab. Open a playlist in place, then play, queue or save it |
 | Double-click a row, or press Enter on it | Plays it; the list becomes the queue |
 | ⋯ menu on a row | Play next, add to queue, add to playlist, favorite, remove offline copy |
 | Library → Add files | Adds MP3, FLAC, Ogg, Opus, M4A, WAV and similar files from disk |
@@ -97,7 +99,7 @@ tests/              Vitest suites (see below)
 
 Security: the renderer is sandboxed with context isolation and a strict CSP; the main process accepts IPC only from
 its own window. Tracks are referenced by id, so the UI can never make the app play an arbitrary path or URL. All external
-programs run through `execFile` with argument arrays (no shell), URLs are parsed and restricted to single YouTube videos,
+programs run through `execFile` with argument arrays (no shell), URLs are parsed and restricted to YouTube videos, playlists and channels (yt-dlp only ever receives a URL rebuilt from the validated parts),
 and titles and thumbnails from the network are sanitized before they are stored or shown.
 
 ## Tests
@@ -125,5 +127,7 @@ Debugging: `MYPLAYER_DEBUG=1 npm run dev` logs mpv events. `MYPLAYER_YTDLP=/path
 - No shuffle, no crossfade or gapless playback between streamed tracks, no playlist reordering (add and remove only),
   no cache size limit or automatic eviction (remove copies from Library → Saved offline).
 - yt-dlp can break when YouTube changes; update it with your package manager. The app does not update it.
-- Search returns the first 25 results and does not page further.
+- Search returns the first 25 results and does not page further. Playlists and channel tabs load the first 200 entries.
+- Tracks added before channel browsing existed have no channel link until you see them in a search or playlist again.
+- Private playlists and anything that needs a sign-in (Liked videos, Watch later) can't be opened.
 - AppImage builds need FUSE on the target machine; the RPM is the recommended install on Fedora.

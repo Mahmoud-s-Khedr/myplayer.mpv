@@ -23,6 +23,7 @@ const trackId = z.string().regex(/^(yt:[\w-]{11}|file:[0-9a-f]{16})$/)
 const trackIds = z.array(trackId).max(1000)
 const uid = z.string().min(1).max(64)
 const num = z.number().finite()
+const channelRef = z.string().max(300).regex(/^(@[^/?#]{2,200}|channel\/UC[\w-]{22}|(c|user)\/[^/?#]{1,200})$/, 'That isn’t a channel.')
 const playlistId = z.number().int().positive()
 const playlistName = z.string().transform((s) => sanitizeText(s, 80)).pipe(z.string().min(1, 'Give the playlist a name.'))
 
@@ -40,9 +41,14 @@ function buildHandlers(s: Services): Api {
       return repo.getTracks(infos.map((i) => i.id))
     },
     async resolveUrl(url) {
-      const info = await provider.lookup(z.string().max(2000).parse(url))
-      repo.upsertTrack(info)
-      return repo.getTrack(info.id)!
+      const link = await provider.lookupLink(z.string().max(2000).parse(url))
+      repo.upsertTracks(link.tracks)
+      return { kind: link.kind, title: link.title, truncated: link.truncated, channelRef: link.channelRef, tracks: repo.getTracks(link.tracks.map((t) => t.id)) }
+    },
+    async browseChannel(ref, tab) {
+      const page = await provider.browseChannel(channelRef.parse(ref), z.enum(['videos', 'playlists']).parse(tab))
+      repo.upsertTracks(page.tracks)
+      return { ...page, tracks: repo.getTracks(page.tracks.map((t) => t.id)) }
     },
     playNow: (ids, start) => playback.playNow(trackIds.parse(ids), z.number().int().min(0).parse(start)),
     enqueue: async (ids, where) => playback.enqueue(trackIds.parse(ids), z.enum(['next', 'end']).parse(where)),

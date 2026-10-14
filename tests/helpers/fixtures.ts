@@ -3,7 +3,7 @@ import { copyFileSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ExecError } from '../../src/main/util/exec'
-import type { DownloadHandle, MediaProvider, ResolvedStream } from '../../src/main/providers/types'
+import type { ChannelInfo, DownloadHandle, LinkInfo, MediaProvider, ResolvedStream } from '../../src/main/providers/types'
 import type { TrackInfo } from '../../src/shared/types'
 
 export const makeTempDir = (): string => mkdtempSync(join(tmpdir(), 'myplayer-test-'))
@@ -24,7 +24,7 @@ export const waitFor = async <T>(fn: () => T | undefined | false | null, ms = 80
 }
 
 export const trackInfo = (sourceId: string, over: Partial<TrackInfo> = {}): TrackInfo => ({
-  id: `yt:${sourceId}`, source: 'youtube', sourceId, title: `Track ${sourceId}`, channel: 'Chan', durationSec: 3,
+  id: `yt:${sourceId}`, source: 'youtube', sourceId, title: `Track ${sourceId}`, channel: 'Chan', channelId: null, durationSec: 3,
   thumbnail: 'https://i.ytimg.com/vi/x/mq.jpg', url: null, localPath: null, license: 'CC', downloadPolicy: 'allowed',
   policyReason: 'ok', ...over
 })
@@ -41,7 +41,8 @@ export class FakeProvider implements MediaProvider {
   infos = new Map<string, TrackInfo>()
 
   async search(): Promise<TrackInfo[]> { return [...this.infos.values()] }
-  async lookup(): Promise<TrackInfo> { throw new Error('unused') }
+  async lookupLink(): Promise<LinkInfo> { throw new Error('unused') }
+  async browseChannel(): Promise<ChannelInfo> { throw new Error('unused') }
 
   async resolve(sourceId: string, signal?: AbortSignal): Promise<ResolvedStream> {
     this.resolveCalls.push(sourceId)

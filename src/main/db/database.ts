@@ -50,7 +50,9 @@ const MIGRATIONS: string[] = [
     created_at INTEGER NOT NULL
   );
   CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-  `
+  `,
+  // Lets a track link back to its channel.
+  `ALTER TABLE tracks ADD COLUMN channel_id TEXT;`
 ]
 
 /** Open (or create) the database and bring its schema up to date. Pass ':memory:' in tests. */

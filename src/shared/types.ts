@@ -11,6 +11,8 @@ export interface TrackInfo {
   sourceId: string
   title: string
   channel: string
+  /** YouTube channel id (UC…), so the track can link to its channel. Null for local files and unknown channels. */
+  channelId: string | null
   durationSec: number | null
   thumbnail: string | null
   /** Public page URL (YouTube watch URL). */
@@ -30,6 +32,35 @@ export interface Track extends TrackInfo {
   cacheBytes: number
   localThumb: boolean
   lastPlayedAt: number | null
+}
+
+/** What a pasted link opened: one track, or the tracks of a playlist or channel. */
+export interface LinkResult {
+  kind: 'track' | 'playlist' | 'channel'
+  title: string
+  tracks: Track[]
+  /** True when the source has more tracks than were loaded. */
+  truncated: boolean
+  /** For channels: the reference to open the channel view with. */
+  channelRef: string | null
+}
+
+/** A playlist listed on a channel's Playlists tab. */
+export interface ChannelPlaylist {
+  id: string
+  title: string
+  thumbnail: string | null
+}
+
+export type ChannelTab = 'videos' | 'playlists'
+
+/** One tab of a channel: its latest uploads, or its playlists. */
+export interface ChannelPage {
+  title: string
+  tab: ChannelTab
+  tracks: Track[]
+  playlists: ChannelPlaylist[]
+  truncated: boolean
 }
 
 export interface QueueItem {

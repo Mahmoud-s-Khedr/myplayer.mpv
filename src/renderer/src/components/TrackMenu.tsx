@@ -1,4 +1,4 @@
-import { HardDrive, Heart, ListEnd, ListPlus, ListStart, MoreHorizontal, Plus } from 'lucide-react'
+import { HardDrive, Heart, ListEnd, ListPlus, ListStart, MoreHorizontal, Plus, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Track } from '@shared/types'
 import { Button } from '@/components/ui/button'
@@ -8,9 +8,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { act, useStore } from '@/store'
 
-export async function createPlaylistWith(trackIds: string[]): Promise<void> {
+export async function createPlaylistWith(trackIds: string[], initialName = ''): Promise<void> {
   useStore.getState().openDialog({
-    kind: 'prompt', title: 'New playlist', label: 'Name', initial: '', action: 'Create playlist',
+    kind: 'prompt', title: 'New playlist', label: 'Name', initial: initialName, action: 'Create playlist',
     onSubmit: async (name) => {
       const created = await window.player.createPlaylist(name)
       if (trackIds.length) await window.player.addToPlaylist(created.id, trackIds)
@@ -61,6 +61,11 @@ export function TrackMenu({ track, extra }: { track: Track; extra?: ReactNode })
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        {track.channelId && (
+          <DropdownMenuItem onSelect={() => useStore.getState().openChannel(`channel/${track.channelId}`)}>
+            <UserRound /> Go to channel
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={() => void act(window.player.toggleFavorite(track.id))}>
           <Heart /> {track.favorite ? 'Remove from favorites' : 'Add to favorites'}
         </DropdownMenuItem>
