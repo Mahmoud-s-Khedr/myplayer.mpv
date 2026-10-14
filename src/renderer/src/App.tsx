@@ -8,6 +8,7 @@ import { Toasts } from '@/components/Toasts'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useShortcuts } from '@/hooks/useShortcuts'
 import { useStore } from '@/store'
+import { ChannelView } from '@/views/ChannelView'
 import { FavoritesView } from '@/views/FavoritesView'
 import { HistoryView } from '@/views/HistoryView'
 import { LibraryView } from '@/views/LibraryView'
@@ -48,6 +49,7 @@ export default function App() {
                 {view.kind === 'favorites' && <FavoritesView />}
                 {view.kind === 'history' && <HistoryView />}
                 {view.kind === 'playlist' && <PlaylistView key={view.id} id={view.id} />}
+                {view.kind === 'channel' && <ChannelView key={view.ref} channelRef={view.ref} />}
               </>
             )}
           </main>

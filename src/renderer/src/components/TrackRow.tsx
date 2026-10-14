@@ -123,7 +123,20 @@ export function TrackRow({ track, index, onPlay, extraMenu, detail, markCurrent 
       <Cover track={track} className="aspect-video w-[4.5rem]" />
       <div className="min-w-0">
         <div className={cn('truncate font-medium', isCurrent && 'text-primary')}>{track.title}</div>
-        <div className="truncate text-xs text-muted-foreground">{track.channel}</div>
+        <div className="truncate text-xs text-muted-foreground">
+          {track.channelId ? (
+            <button
+              type="button"
+              onClick={() => useStore.getState().openChannel(`channel/${track.channelId}`)}
+              aria-label={`Open channel ${track.channel}`}
+              className="max-w-full truncate rounded-sm hover:text-foreground hover:underline"
+            >
+              {track.channel}
+            </button>
+          ) : (
+            track.channel
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2 pr-1">
         <Badge track={track} />

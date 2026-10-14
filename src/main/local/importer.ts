@@ -28,6 +28,7 @@ export async function importLocalFiles(
         id, source: 'local', sourceId: id.slice(5),
         title: sanitizeText(meta?.title, 200) || sanitizeText(basename(real, extname(real)).replace(/_/g, ' '), 200) || 'Untitled',
         channel: sanitizeText(meta?.artist, 120) || 'Local file',
+        channelId: null,
         durationSec: sanitizeDuration(meta?.durationSec), thumbnail: null, url: null, localPath: real,
         license: null, downloadPolicy: 'denied', policyReason: 'Already stored on this computer.'
       })

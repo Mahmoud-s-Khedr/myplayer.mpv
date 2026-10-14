@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { EmptyState, ViewShell } from '@/components/ViewShell'
+import { CollectionHeader } from '@/components/CollectionHeader'
 import { TrackList } from '@/components/TrackList'
 import { useLoad } from '@/hooks/useTracks'
 import { cn } from '@/lib/utils'
@@ -39,8 +40,8 @@ export function SearchView() {
             ref={ref}
             value={search.input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Search YouTube, or paste a video link"
-            aria-label="Search YouTube or paste a video link"
+            placeholder="Search YouTube, or paste a video, playlist or channel link"
+            aria-label="Search YouTube or paste a video, playlist or channel link"
             autoComplete="off"
             spellCheck={false}
             className="h-12 rounded-xl bg-card pr-24 pl-10 text-base"
@@ -86,11 +87,12 @@ export function SearchView() {
       {search.status === 'done' &&
         (search.results.length === 0 ? (
           <EmptyState icon={<Search />} title="Nothing found">
-            {search.creativeCommons ? 'Try different words, or turn off “Creative Commons only”.' : 'Try different words, or paste a link to a video.'}
+            {search.creativeCommons ? 'Try different words, or turn off “Creative Commons only”.' : 'Try different words, or paste a YouTube link.'}
           </EmptyState>
         ) : (
           <>
-            {search.mode === 'link' && (
+            {search.link && <CollectionHeader link={search.link} tracks={search.results} />}
+            {search.mode === 'link' && !search.link && (
               <p className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Link2 className="size-4" aria-hidden /> From your link
               </p>
@@ -110,7 +112,7 @@ export function SearchView() {
         ) : (
           !recent.loading && (
             <EmptyState icon={<Search />} title="Find something to play">
-              Search for a song, artist or mix, or paste a YouTube link. You can also add music files from your Library.
+              Search for a song, artist or mix, or paste a link to a video, playlist or channel. You can also add music files from your Library.
             </EmptyState>
           )
         ))}

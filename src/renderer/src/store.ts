@@ -7,6 +7,7 @@ export type View =
   | { kind: 'favorites' }
   | { kind: 'history' }
   | { kind: 'playlist'; id: number }
+  | { kind: 'channel'; ref: string }
 
 export interface SearchState {
   input: string
@@ -14,6 +15,8 @@ export interface SearchState {
   status: 'idle' | 'loading' | 'done' | 'error'
   mode: 'search' | 'link'
   results: Track[]
+  /** Set when the pasted link was a playlist, so the view can offer to play or save all of it. */
+  link: { title: string; truncated: boolean } | null
   error: string | null
 }
 
@@ -27,6 +30,8 @@ interface ToastItem extends Toast {
 
 interface Store {
   view: View
+  /** Where the back button of a channel goes. */
+  returnTo: View | null
   player: PlayerState
   queue: QueueSnapshot
   queueOpen: boolean
@@ -40,6 +45,8 @@ interface Store {
 
   openDialog: (d: AppDialog | null) => void
   setView: (v: View) => void
+  openChannel: (ref: string) => void
+  closeChannel: () => void
   toggleQueue: () => void
   setShortcutsOpen: (open: boolean) => void
   setSearchInput: (input: string) => void
@@ -57,18 +64,21 @@ let toastId = 0
 
 export const useStore = create<Store>((set, get) => ({
   view: { kind: 'search' },
+  returnTo: null,
   player: { status: 'idle', positionSec: 0, durationSec: 0, volume: 80, muted: false, source: null, error: null },
   queue: { items: [], index: -1, repeat: 'off' },
   queueOpen: true,
   shortcutsOpen: false,
   playlists: [],
   revision: 0,
-  search: { input: '', creativeCommons: false, status: 'idle', mode: 'search', results: [], error: null },
+  search: { input: '', creativeCommons: false, status: 'idle', mode: 'search', results: [], link: null, error: null },
   toasts: [],
   dialog: null,
 
   openDialog: (dialog) => set({ dialog }),
   setView: (view) => set({ view }),
+  openChannel: (ref) => set((s) => ({ view: { kind: 'channel', ref }, returnTo: s.view.kind === 'channel' ? s.returnTo : s.view })),
+  closeChannel: () => set((s) => ({ view: s.returnTo ?? { kind: 'search' }, returnTo: null })),
   toggleQueue: () => set((s) => ({ queueOpen: !s.queueOpen })),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   setSearchInput: (input) => set((s) => ({ search: { ...s.search, input } })),
@@ -85,12 +95,26 @@ export const useStore = create<Store>((set, get) => ({
     const mode = URL_LIKE.test(text) ? 'link' : 'search'
     set((s) => ({ search: { ...s.search, status: 'loading', mode, error: null } }))
     try {
-      const results = mode === 'link' ? [await window.player.resolveUrl(text)] : await window.player.search(text, creativeCommons)
+      let results: Track[]
+      let link: SearchState['link'] = null
+      if (mode === 'link') {
+        const opened = await window.player.resolveUrl(text)
+        if (token !== searchToken) return
+        if (opened.kind === 'channel' && opened.channelRef) {
+          set((s) => ({ search: { ...s.search, status: 'idle' } }))
+          get().openChannel(opened.channelRef)
+          return
+        }
+        results = opened.tracks
+        if (opened.kind === 'playlist') link = { title: opened.title, truncated: opened.truncated }
+      } else {
+        results = await window.player.search(text, creativeCommons)
+      }
       if (token !== searchToken) return
-      set((s) => ({ search: { ...s.search, status: 'done', results } }))
+      set((s) => ({ search: { ...s.search, status: 'done', results, link } }))
     } catch (err) {
       if (token !== searchToken) return
-      set((s) => ({ search: { ...s.search, status: 'error', results: [], error: err instanceof Error ? err.message : 'Search failed.' } }))
+      set((s) => ({ search: { ...s.search, status: 'error', results: [], link: null, error: err instanceof Error ? err.message : 'Search failed.' } }))
     }
   },
 

@@ -4,7 +4,7 @@ import { Repo } from '../src/main/db/repo'
 import type { TrackInfo } from '../src/shared/types'
 
 const info = (id: string, over: Partial<TrackInfo> = {}): TrackInfo => ({
-  id: `yt:${id}`, source: 'youtube', sourceId: id, title: `Title ${id}`, channel: 'Chan', durationSec: 200,
+  id: `yt:${id}`, source: 'youtube', sourceId: id, title: `Title ${id}`, channel: 'Chan', channelId: null, durationSec: 200,
   thumbnail: 'https://i.ytimg.com/vi/x/mq.jpg', url: `https://www.youtube.com/watch?v=${id}`, localPath: null,
   license: null, downloadPolicy: 'unknown', policyReason: null, ...over
 })
@@ -43,6 +43,19 @@ describe('tracks', () => {
     expect(repo.toggleFavorite('yt:aaaaaaaaaaa')).toBe(false)
     expect(repo.favorites()).toHaveLength(1)
     expect(() => repo.toggleFavorite('yt:missing')).toThrow()
+  })
+})
+
+describe('channel ids', () => {
+  const uc = 'UCSJ4gkVC6NrvII8umztf0Ow'
+  it('keeps the channel id when a later sighting does not know it', () => {
+    repo.upsertTrack(info('aaaaaaaaaaa', { channelId: uc }))
+    repo.upsertTrack(info('aaaaaaaaaaa'))
+    expect(repo.getTrack('yt:aaaaaaaaaaa')!.channelId).toBe(uc)
+  })
+  it('upserts many tracks at once', () => {
+    repo.upsertTracks([info('aaaaaaaaaaa', { channelId: uc }), info('bbbbbbbbbbb')])
+    expect(repo.getTracks(['yt:aaaaaaaaaaa', 'yt:bbbbbbbbbbb']).map((t) => t.channelId)).toEqual([uc, null])
   })
 })
 

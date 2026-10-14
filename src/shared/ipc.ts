@@ -1,7 +1,10 @@
 import type {
   CacheStats,
+  ChannelPage,
+  ChannelTab,
   HistoryEntry,
   LibraryFilter,
+  LinkResult,
   PlayerState,
   PlaylistEntry,
   PlaylistSummary,
@@ -19,7 +22,8 @@ import type {
 export interface Api {
   // discovery
   search(query: string, creativeCommons: boolean): Promise<Track[]>
-  resolveUrl(url: string): Promise<Track>
+  resolveUrl(url: string): Promise<LinkResult>
+  browseChannel(ref: string, tab: ChannelTab): Promise<ChannelPage>
   // playback
   playNow(ids: string[], startIndex: number): Promise<void>
   enqueue(ids: string[], where: 'next' | 'end'): Promise<void>
@@ -73,7 +77,7 @@ export interface Bridge extends Api {
 }
 
 export const API_METHODS: readonly (keyof Api)[] = [
-  'search', 'resolveUrl', 'playNow', 'enqueue', 'playQueueItem', 'togglePause', 'next', 'previous',
+  'search', 'resolveUrl', 'browseChannel', 'playNow', 'enqueue', 'playQueueItem', 'togglePause', 'next', 'previous',
   'seek', 'seekBy', 'setVolume', 'toggleMute', 'setRepeat', 'removeFromQueue', 'moveInQueue',
   'clearQueue', 'getSnapshot', 'tracks', 'library', 'favorites', 'recent', 'history', 'clearHistory',
   'toggleFavorite', 'importLocalFiles', 'playlists', 'createPlaylist', 'renamePlaylist',

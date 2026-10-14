@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-export function ViewShell({ title, subtitle, actions, children }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
+export function ViewShell({ title, subtitle, actions, back, children }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; back?: ReactNode; children: ReactNode }) {
   return (
     <ScrollArea className="h-full min-w-0">
       <div className="mx-auto max-w-4xl px-8 pt-8 pb-10">
+        {back && <div className="-mt-3 mb-2 -ml-2">{back}</div>}
         <header className="mb-6 flex items-end justify-between gap-4">
           <div className="min-w-0">
             <h1 className="font-display truncate text-3xl font-semibold tracking-tight">{title}</h1>

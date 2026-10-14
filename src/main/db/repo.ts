@@ -4,7 +4,7 @@ import type {
 } from '@shared/types'
 
 interface TrackRow {
-  id: string; source: 'youtube' | 'local'; source_id: string; title: string; channel: string
+  id: string; source: 'youtube' | 'local'; source_id: string; title: string; channel: string; channel_id: string | null
   duration_sec: number | null; thumbnail: string | null; url: string | null; local_path: string | null
   license: string | null; download_policy: 'allowed' | 'denied' | 'unknown'; policy_reason: string | null
   qualified_plays: number; favorited_at: number | null; last_played_at: number | null
@@ -32,10 +32,11 @@ export class Repo {
   upsertTrack(info: TrackInfo): void {
     // Search results only know title/channel/duration. Never let them erase a policy we already decided.
     this.db.prepare(
-      `INSERT INTO tracks (id, source, source_id, title, channel, duration_sec, thumbnail, url, local_path, license, download_policy, policy_reason, added_at)
-       VALUES (@id, @source, @sourceId, @title, @channel, @durationSec, @thumbnail, @url, @localPath, @license, @downloadPolicy, @policyReason, @addedAt)
+      `INSERT INTO tracks (id, source, source_id, title, channel, channel_id, duration_sec, thumbnail, url, local_path, license, download_policy, policy_reason, added_at)
+       VALUES (@id, @source, @sourceId, @title, @channel, @channelId, @durationSec, @thumbnail, @url, @localPath, @license, @downloadPolicy, @policyReason, @addedAt)
        ON CONFLICT(id) DO UPDATE SET
          title = excluded.title, channel = excluded.channel,
+         channel_id = COALESCE(excluded.channel_id, channel_id),
          duration_sec = COALESCE(excluded.duration_sec, duration_sec),
          thumbnail = COALESCE(excluded.thumbnail, thumbnail), url = COALESCE(excluded.url, url),
          local_path = COALESCE(excluded.local_path, local_path),
@@ -43,6 +44,10 @@ export class Repo {
          policy_reason = CASE WHEN excluded.download_policy = 'unknown' THEN policy_reason ELSE excluded.policy_reason END,
          download_policy = CASE WHEN excluded.download_policy = 'unknown' THEN download_policy ELSE excluded.download_policy END`
     ).run({ ...info, addedAt: this.now() })
+  }
+
+  upsertTracks(infos: TrackInfo[]): void {
+    this.db.transaction(() => infos.forEach((i) => this.upsertTrack(i)))()
   }
 
   getTracks(ids: string[]): Track[] {
@@ -223,7 +228,7 @@ export class Repo {
   private toTrack(r: TrackRow): Track {
     const cache: CacheState = r.cache_file ? 'ready' : this.downloading.has(r.id) ? 'downloading' : 'none'
     return {
-      id: r.id, source: r.source, sourceId: r.source_id, title: r.title, channel: r.channel,
+      id: r.id, source: r.source, sourceId: r.source_id, title: r.title, channel: r.channel, channelId: r.channel_id,
       durationSec: r.duration_sec, thumbnail: r.thumbnail, url: r.url, localPath: r.local_path,
       license: r.license, downloadPolicy: r.download_policy, policyReason: r.policy_reason,
       qualifiedPlays: r.qualified_plays, favorite: r.favorited_at !== null, cache,
